@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 // Rutas
 app.use('/alumnos', alumnosRoutes);
 app.use('/profesores', profesoresRoutes);
-app.use('/alumnos', sessionsRoutes);
+app.use('/alumnos/:id/session', sessionsRoutes);
 
 // Ruta de validación
 app.get('/', (req, res) => {

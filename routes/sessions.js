@@ -23,7 +23,7 @@ function genSessionString() {
 }
 
 // POST /alumnos/:id/session/login
-router.post('/:id/session/login', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const alumnoId = parseInt(req.params.id, 10);
     const { password } = req.body;
@@ -67,7 +67,7 @@ router.post('/:id/session/login', async (req, res) => {
 });
 
 // POST /alumnos/:id/session/verify
-router.post('/:id/session/verify', async (req, res) => {
+router.post('/verify', async (req, res) => {
   try {
     const { sessionString } = req.body;
     if (!sessionString) return res.status(400).json({ error: 'sessionString requerido' });
@@ -92,7 +92,7 @@ router.post('/:id/session/verify', async (req, res) => {
 });
 
 // POST /alumnos/:id/session/logout
-router.post('/:id/session/logout', async (req, res) => {
+router.post('/logout', async (req, res) => {
   try {
     const { sessionString } = req.body;
     if (!sessionString) return res.status(400).json({ error: 'sessionString requerido' });
