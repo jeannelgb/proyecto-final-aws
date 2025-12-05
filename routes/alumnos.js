@@ -3,10 +3,12 @@ const router = express.Router();
 const upload = require("../middlewares/upload");
 const s3 = require("../aws/s3Client");
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
-
 const Alumno = require("../models/Alumno");
 
-// Validation
+
+// ----------------------
+// VALIDACIÓN
+// ----------------------
 function validarAlumno(body) {
   if (!body) return false;
   if (!body.nombres || typeof body.nombres !== "string") return false;
@@ -17,20 +19,33 @@ function validarAlumno(body) {
   return true;
 }
 
+function limpiarAlumno(a) {
+  const obj = a.toJSON();
+  delete obj.password;
+  return obj;
+}
+
+
+
+// ----------------------
 // GET /alumnos
+// ----------------------
 router.get("/", async (req, res) => {
   const alumnos = await Alumno.findAll();
-  res.status(200).json(alumnos);
+  res.status(200).json(alumnos.map(limpiarAlumno));
 });
 
+
+
+// ----------------------
 // POST /alumnos
+// ----------------------
 router.post("/", async (req, res) => {
   if (!validarAlumno(req.body)) {
     return res.status(400).json({ error: "Campos inválidos" });
   }
 
   try {
-
     const nuevo = await Alumno.create({
       nombres: req.body.nombres,
       apellidos: req.body.apellidos,
@@ -40,27 +55,33 @@ router.post("/", async (req, res) => {
       fotoPerfilUrl: null
     });
 
-    const toReturn = nuevo.toJSON();
-    delete toReturn.password;
-
-    res.status(201).json(toReturn);
+    res.status(201).json(limpiarAlumno(nuevo));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error creando alumno" });
   }
 });
 
+
+
+// ----------------------
 // GET /alumnos/:id
+// ----------------------
 router.get("/:id", async (req, res) => {
   const alumno = await Alumno.findByPk(req.params.id);
   if (!alumno) return res.status(404).json({ error: "Alumno no encontrado" });
 
-  res.status(200).json(alumno);
+  res.status(200).json(limpiarAlumno(alumno));
 });
 
+
+
+
+// ----------------------
 // PUT /alumnos/:id
+// ----------------------
 router.put("/:id", async (req, res) => {
-  const camposValidos = ["nombre", "edad", "genero", "promedio", "foto"];
+  const camposValidos = ["nombres", "apellidos", "matricula", "promedio", "password"];
 
   const datosActualizados = {};
   for (const campo of camposValidos) {
@@ -74,16 +95,19 @@ router.put("/:id", async (req, res) => {
   }
 
   const alumno = await Alumno.findByPk(req.params.id);
-  if (!alumno) {
-    return res.status(404).json({ error: "Alumno no encontrado" });
-  }
+  if (!alumno) return res.status(404).json({ error: "Alumno no encontrado" });
 
   await alumno.update(datosActualizados);
-  res.status(200).json(alumno);
+
+  res.status(200).json(limpiarAlumno(alumno));
 });
 
 
+
+
+// ----------------------
 // DELETE /alumnos/:id
+// ----------------------
 router.delete("/:id", async (req, res) => {
   const alumno = await Alumno.findByPk(req.params.id);
   if (!alumno) return res.status(404).json({ error: "Alumno no encontrado" });
@@ -92,7 +116,12 @@ router.delete("/:id", async (req, res) => {
   res.status(200).json({});
 });
 
-// POST /alumnos/:id/fotoPerfil → upload a S3
+
+
+
+// ----------------------
+// POST /alumnos/:id/fotoPerfil
+// ----------------------
 router.post("/:id/fotoPerfil", upload.single("foto"), async (req, res) => {
   try {
     const alumno = await Alumno.findByPk(req.params.id);
@@ -102,27 +131,25 @@ router.post("/:id/fotoPerfil", upload.single("foto"), async (req, res) => {
 
     const fileName = `alumnos/${alumno.id}_${Date.now()}.jpg`;
 
-    const uploadParams = {
+    await s3.send(new PutObjectCommand({
       Bucket: process.env.S3_BUCKET,
       Key: fileName,
       Body: req.file.buffer,
       ACL: "public-read",
       ContentType: req.file.mimetype
-    };
+    }));
 
-    await s3.send(new PutObjectCommand(uploadParams));
+    const url = `https://${process.env.S3_BUCKET}.s3.amazonaws.com/${fileName}`;
 
-    const fileUrl = `https://${process.env.S3_BUCKET}.s3.amazonaws.com/${fileName}`;
-
-    alumno.fotoPerfilUrl = fileUrl;
+    alumno.fotoPerfilUrl = url;
     await alumno.save();
 
-    res.status(200).json({ fotoPerfilUrl: fileUrl });
-
+    res.status(200).json({ fotoPerfilUrl: url });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error subiendo la imagen a S3" });
   }
 });
+
 
 module.exports = router;
