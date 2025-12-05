@@ -5,7 +5,6 @@ const s3 = require("../aws/s3Client");
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const Alumno = require("../models/Alumno");
 
-
 // ----------------------
 // VALIDACIÓN
 // ----------------------
@@ -25,8 +24,6 @@ function limpiarAlumno(a) {
   return obj;
 }
 
-
-
 // ----------------------
 // GET /alumnos
 // ----------------------
@@ -34,8 +31,6 @@ router.get("/", async (req, res) => {
   const alumnos = await Alumno.findAll();
   res.status(200).json(alumnos.map(limpiarAlumno));
 });
-
-
 
 // ----------------------
 // POST /alumnos
@@ -62,8 +57,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-
-
 // ----------------------
 // GET /alumnos/:id
 // ----------------------
@@ -74,36 +67,24 @@ router.get("/:id", async (req, res) => {
   res.status(200).json(limpiarAlumno(alumno));
 });
 
-
-
-
 // ----------------------
 // PUT /alumnos/:id
 // ----------------------
 router.put("/:id", async (req, res) => {
-  const camposValidos = ["nombres", "apellidos", "matricula", "promedio", "password"];
 
-  const datosActualizados = {};
-  for (const campo of camposValidos) {
-    if (req.body[campo] !== undefined) {
-      datosActualizados[campo] = req.body[campo];
-    }
-  }
-
-  if (Object.keys(datosActualizados).length === 0) {
+  // Validación igual que POST
+  if (!validarAlumno(req.body)) {
     return res.status(400).json({ error: "Campos inválidos" });
   }
 
   const alumno = await Alumno.findByPk(req.params.id);
-  if (!alumno) return res.status(404).json({ error: "Alumno no encontrado" });
+  if (!alumno) {
+    return res.status(404).json({ error: "Alumno no encontrado" });
+  }
 
-  await alumno.update(datosActualizados);
-
-  res.status(200).json(limpiarAlumno(alumno));
+  await alumno.update(req.body);
+  res.status(200).json(alumno);
 });
-
-
-
 
 // ----------------------
 // DELETE /alumnos/:id
@@ -115,9 +96,6 @@ router.delete("/:id", async (req, res) => {
   await alumno.destroy();
   res.status(200).json({});
 });
-
-
-
 
 // ----------------------
 // POST /alumnos/:id/fotoPerfil
@@ -150,6 +128,5 @@ router.post("/:id/fotoPerfil", upload.single("foto"), async (req, res) => {
     res.status(500).json({ error: "Error subiendo la imagen a S3" });
   }
 });
-
 
 module.exports = router;
