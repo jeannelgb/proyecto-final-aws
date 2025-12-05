@@ -11,9 +11,3 @@ const s3 = new S3Client({
 });
 
 module.exports = s3;
-
-console.log("AWS KEYS LOADED ?", {
-  key: process.env.AWS_ACCESS_KEY_ID ? "OK" : "MISSING",
-  secret: process.env.AWS_SECRET_ACCESS_KEY ? "OK" : "MISSING",
-  token: process.env.AWS_SESSION_TOKEN ? "OK" : "MISSING"
-});

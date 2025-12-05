@@ -4,13 +4,12 @@ const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
-const bcrypt = require('bcrypt');
 const Alumno = require('../models/Alumno');
 
 require('dotenv').config();
 
 const REGION = process.env.AWS_REGION;
-const TABLE = process.env.DYNAMO_TABLE_SESIONES || 'sesiones-alumnos';
+const TABLE = process.env.DYNAMO_TABLE_SESIONES;
 
 const ddb = new DynamoDBClient({ region: REGION, credentials: {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -19,7 +18,6 @@ const ddb = new DynamoDBClient({ region: REGION, credentials: {
 }});
 const docClient = DynamoDBDocumentClient.from(ddb);
 
-// Helper: generate 128 hex digits => 64 bytes -> hex = 128 chars
 function genSessionString() {
   return crypto.randomBytes(64).toString('hex');
 }
@@ -29,20 +27,26 @@ router.post('/:id/session/login', async (req, res) => {
   try {
     const alumnoId = parseInt(req.params.id, 10);
     const { password } = req.body;
-    if (!password) return res.status(400).json({ error: 'Password requerido' });
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password requerido' });
+    }
 
     const alumno = await Alumno.findByPk(alumnoId);
-    if (!alumno) return res.status(404).json({ error: 'Alumno no encontrado' });
+    if (!alumno) {
+      return res.status(404).json({ error: 'Alumno no encontrado' });
+    }
 
-    const match = await bcrypt.compare(password, alumno.password);
-    if (!match) return res.status(400).json({ error: 'Credenciales invalidas' });
+    if (password !== alumno.password) {
+      return res.status(400).json({ error: 'Credenciales invalidas' });
+    }
 
     const sessionId = uuidv4();
     const sessionString = genSessionString();
     const fecha = Math.floor(Date.now() / 1000);
 
     const item = {
-      id: sessionId,               // PK
+      id: sessionId,
       fecha,
       alumnoId,
       active: true,
@@ -55,6 +59,7 @@ router.post('/:id/session/login', async (req, res) => {
     }));
 
     return res.status(201).json(item);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error creando session' });
@@ -67,8 +72,6 @@ router.post('/:id/session/verify', async (req, res) => {
     const { sessionString } = req.body;
     if (!sessionString) return res.status(400).json({ error: 'sessionString requerido' });
 
-    // Requirement: we must find the session by sessionString. We assume a GSI exists on sessionString.
-    // Query using index "sessionString-index"
     const q = {
       TableName: TABLE,
       IndexName: 'sessionString-index',
@@ -94,7 +97,6 @@ router.post('/:id/session/logout', async (req, res) => {
     const { sessionString } = req.body;
     if (!sessionString) return res.status(400).json({ error: 'sessionString requerido' });
 
-    // Query by sessionString to get PK id
     const q = {
       TableName: TABLE,
       IndexName: 'sessionString-index',
@@ -107,7 +109,6 @@ router.post('/:id/session/logout', async (req, res) => {
 
     const session = out.Items[0];
 
-    // Update active=false
     await docClient.send(new UpdateCommand({
       TableName: TABLE,
       Key: { id: session.id },
