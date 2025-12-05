@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const crypto = require('crypto');
 const Alumno = require('../models/Alumno');
 
@@ -41,7 +41,7 @@ router.post('/:id/session/login', async (req, res) => {
       return res.status(400).json({ error: 'Credenciales invalidas' });
     }
 
-    const sessionId = uuidv4();
+    const sessionId = randomUUID();
     const sessionString = genSessionString();
     const fecha = Math.floor(Date.now() / 1000);
 
