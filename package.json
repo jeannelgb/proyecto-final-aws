@@ -19,6 +19,16 @@
   },
   "homepage": "https://github.com/jeannelgb/proyecto-final-aws#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "@aws-sdk/client-dynamodb": "^3.943.0",
+    "@aws-sdk/client-s3": "^3.943.0",
+    "@aws-sdk/client-sts": "^3.943.0",
+    "@aws-sdk/lib-dynamodb": "^3.943.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
+    "uuid": "^13.0.0"
   }
 }

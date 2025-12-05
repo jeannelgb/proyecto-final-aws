@@ -1,7 +1,10 @@
+const sequelize = require('./models');
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const alumnosRoutes = require('./routes/alumnos.js');
 const profesoresRoutes = require('./routes/profesores.js');
+const sessionsRoutes = require('./routes/sessions.js');
 
 const app = express();
 app.use(bodyParser.json());
@@ -9,6 +12,7 @@ app.use(bodyParser.json());
 // Rutas
 app.use('/alumnos', alumnosRoutes);
 app.use('/profesores', profesoresRoutes);
+app.use('/alumnos/', sessionsRoutes);
 
 // Ruta de validación
 app.get('/', (req, res) => {
@@ -23,4 +27,8 @@ app.use((err, req, res, next) => {
 
 // Inicio
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => console.log(`✅ Servidor en línea en http://localhost:${PORT}`));
+
+sequelize.sync().then(() => {
+  console.log("Base de datos sincronizada");
+  app.listen(PORT, "0.0.0.0", () => console.log(`✅ Servidor en línea en http://localhost:${PORT}`));
+});
