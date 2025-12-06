@@ -63,8 +63,7 @@ datos.
 ■ alumnoId (number)
 ■ active (boolean, true por defecto)
 ■ sessionString (string)
--> El sessionString debe ser un string aleatorio automáticamente generado de
-128 dígitos.
+-> El sessionString debe ser un string aleatorio automáticamente generado de 128 dígitos.
 - Crear un endpoint de: POST /alumnos/{id}/session/verify
 -> Debe recibir el sessionString y ver si la sesión es válida, debe comprar el valor de active:
 ■ 200 si el sessionString es correcto y si active = true

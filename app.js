@@ -4,7 +4,6 @@ const sequelize = require('./db');
 const bodyParser = require('body-parser');
 const alumnosRoutes = require('./routes/alumnos.js');
 const profesoresRoutes = require('./routes/profesores.js');
-const sessionsRoutes = require('./routes/sessions.js');
 
 console.log("DB CONFIG:", {
   host: process.env.DB_HOST,
@@ -18,7 +17,6 @@ app.use(bodyParser.json());
 // Rutas
 app.use('/alumnos', alumnosRoutes);
 app.use('/profesores', profesoresRoutes);
-app.use('/alumnos/:id/session', sessionsRoutes);
 
 // Ruta de validación
 app.get('/', (req, res) => {

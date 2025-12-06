@@ -19,9 +19,10 @@ function validarProfesor(body) {
     if (typeof body.nombres !== "string" || body.nombres.trim() === "") return false;
     if (typeof body.apellidos !== "string" || body.apellidos.trim() === "") return false;
     if (typeof body.numeroEmpleado !== "number" || body.numeroEmpleado <= 0) return false;
-    if (typeof body.horasClase !== "number" || body.horasClase < 0 || !Number.isInteger(body.horasClase)) return false;
+    if (typeof body.horasClase !== "number" || body.horasClase < 0) return false;
     return true;
 }
+
 
 // GET /profesores
 router.get('/', (req, res) => {
@@ -31,6 +32,10 @@ router.get('/', (req, res) => {
 // POST /profesores
 router.post('/', (req, res) => {
     const profesor = req.body;
+
+    if (!profesor.id) profesor.id = Object.keys(profesores).length + 1;
+
+    profesor.horasClase = Math.floor(profesor.horasClase);
 
     if (!validarProfesor(profesor)) {
         return res.status(400).json({ error: "Campos inválidos" });
@@ -59,13 +64,17 @@ router.put('/:id', (req, res) => {
         return res.status(404).json({ error: "Profesor no encontrado" });
     }
 
+    req.body.id = id;
+
     if (!validarProfesor(req.body)) {
+        console.log("Validación fallida:", req.body);
         return res.status(400).json({ error: "Campos inválidos" });
     }
 
     profesores[id] = req.body;
     res.status(200).json(req.body);
 });
+
 
 // DELETE /profesores/:id
 router.delete('/:id', (req, res) => {
